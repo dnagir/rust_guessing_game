@@ -1,10 +1,10 @@
 extern crate rand;
 use std::io::{self, BufRead};
+use std::str::{FromStr};
 use rand::Rng;
 use GuessResult::*;
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 enum GuessResult {
     Smaller,
     Bigger,
@@ -22,12 +22,12 @@ fn process_guess(line: std::io::Result<String>, number_to_guess: i32) -> GuessRe
         }
     }
 
+
     match line {
         Ok(line) => {
-            match line.trim().parse::<i32>() {
-                Ok(num) => process_int(num, number_to_guess),
-                Err(_) => BadInput,
-            }
+            i32::from_str(line.trim())
+                .and_then(|num| Ok(process_int(num, number_to_guess)))
+                .unwrap_or(BadInput)
         }
         Err(_) => BadInput,
     }
