@@ -1,10 +1,10 @@
 extern crate rand;
 use std::io::{self, BufRead};
-use std::str::{FromStr};
+use std::str::FromStr;
 use rand::Rng;
 use GuessResult::*;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 enum GuessResult {
     Smaller,
     Bigger,
@@ -26,7 +26,7 @@ fn process_guess(line: std::io::Result<String>, number_to_guess: i32) -> GuessRe
     match line {
         Ok(line) => {
             i32::from_str(line.trim())
-                .and_then(|num| Ok(process_int(num, number_to_guess)))
+                .map(|num| process_int(num, number_to_guess))
                 .unwrap_or(BadInput)
         }
         Err(_) => BadInput,
@@ -42,26 +42,23 @@ fn format_guess(result: GuessResult) -> &'static str {
     }
 }
 
-fn game_over(result: &GuessResult) -> bool {
-    match *result {
-        Guessed => true,
-        _ => false,
-    }
+fn game_over(result: GuessResult) -> bool {
+    result == Guessed
 }
 
 
 fn main() {
     let input = io::stdin();
-    let lock = input.lock();
+    let input = input.lock();
 
     println!("Guess a number");
 
     let number_to_guess = rand::thread_rng().gen_range(1, 1001);
 
-    let guesses = lock.lines()
+    let guesses = input.lines()
         .map(|line| process_guess(line, number_to_guess))
-        .take_while(|guess_result| !game_over(guess_result))
-        .map(|guess_result| format_guess(guess_result))
+        .take_while(|&guess_result| !game_over(guess_result))
+        .map(format_guess)
         .map(|msg| println!("{}", msg))
         .count();
 
@@ -76,14 +73,14 @@ mod tests {
 
     # [test]
     fn game_over_is_true_when_guessed() {
-        assert_eq!(game_over(&Guessed), true);
+        assert_eq!(game_over(Guessed), true);
     }
 
     # [test]
     fn game_over_is_false_if_not_guessed() {
-        assert_eq!(game_over(&Smaller), false);
-        assert_eq!(game_over(&Bigger), false);
-        assert_eq!(game_over(&BadInput), false);
+        assert_eq!(game_over(Smaller), false);
+        assert_eq!(game_over(Bigger), false);
+        assert_eq!(game_over(BadInput), false);
     }
 
     # [test]
